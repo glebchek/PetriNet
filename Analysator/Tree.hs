@@ -23,14 +23,24 @@ module Tree where
     (<=) Omega   _       = False
     (<=) (Num c) (Num o) = c <= o
 
-  type Marking = [Chip]
+  data Marking  = Marking {
+                marks :: [Chip]
+              } deriving Eq
+  instance Show Marking where
+    show (Marking m) = "|" ++ init (concatMap (\c -> show c ++ " ") m) ++ "|"
+
   type Node     = Int
   type Transfer = ([Node], [Node]) -- Входные узыл и выходные узлы
   type Petri    = [Transfer]
 
   data MarkType = JustMark     Marking |
                   AlreadyExist Marking |
-                  CoverMark    Marking deriving Show
+                  CoverMark    Marking
+
+  instance Show MarkType where
+    show (JustMark     o) = show o
+    show (AlreadyExist o) = "Existed: "    ++ show o
+    show (CoverMark    o) = "Cover Mark: " ++ show o
 
   fromMT :: MarkType -> Marking
   fromMT mo = case mo of
@@ -49,27 +59,40 @@ module Tree where
     (==) mt mo = fromMT mt == fromMT mo
 
                     -- номер перехода, текущая маркировка, сабдеревья
-  data AttainTree = AttainTree Marking [(TransferNum, AttainTree)] |
-                    Finish MarkType TransferNum deriving Show
+  data AttainTree = AttainTree {
+                      currentMark :: Marking
+                    , subTrees :: [(TransferNum, AttainTree)] } |
+                    Finish {
+                       markType :: MarkType
+                      ,transfer :: TransferNum
+                      }
+  instance Show AttainTree where
+    show (Finish m _)           = show m
+    show (AttainTree m sbtrees) = let
+              label x = "Tree: " ++ show m ++ " " ++ x
+              showTree (trans, t) = " t" ++ case t of
+                Finish _ tr -> show tr    ++ " -> (" ++ show t ++ ")"
+                _           -> show trans ++ " -> (" ++ show t ++ ")"
+              decoration ts = "[" ++ ts ++ "]"
+            in label $ decoration $ concatMap showTree sbtrees
 
   replace :: [a] -> a -> Int -> [a]
   replace xs e n = take n xs ++ [e] ++ drop (n + 1) xs
 
   nextMark :: Monad m => Marking -> Transfer -> m MarkType
-  -- nextMark mark [] = error $ "Не ошибка, но интересно тип: " ++ show mark
   nextMark mark (input, output) = liftM (newMark mark output) $
                                   foldM ifEnough mark input where
       ifEnough :: Monad m => Marking -> Node -> m Marking
-      ifEnough cmark node = case cmark!!node of
-                    Omega   -> return cmark
+      ifEnough (Marking cmark) node = case cmark!!node of
+                    Omega   -> return $ Marking cmark
                     (Num i) -> if i <= 0 then
                                 fail "Not enough"
                                else let
                                  new = replace cmark (Num (i - 1)) node
-                               in return new
+                               in return $ Marking new
 
       newMark :: Marking -> [Node] -> Marking -> MarkType
-      newMark oldMark n currMark = let
+      newMark (Marking oldMark) n (Marking currMark) = let
           addChip cmark node = case cmark!!node of -- Добавить фишки
               Omega   -> cmark
               (Num i) -> replace cmark (Num (i + 1)) node
@@ -86,9 +109,9 @@ module Tree where
         in if all isCover (zip oldMark nMark) then let -- Если покрывает,
               omeged = foldl (cover oldMark) nMark n   -- добавим ω
               in if omeged > nMark then
-                   CoverMark omeged
-                 else JustMark omeged
-           else JustMark nMark
+                   CoverMark $ Marking omeged
+                 else JustMark $ Marking omeged
+           else JustMark $ Marking nMark
 
   -- analys :: AttainTree -> String
   -- analys = show
