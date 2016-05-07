@@ -27,7 +27,7 @@ module Tree where
                 marks :: [Chip]
               } deriving Eq
   instance Show Marking where
-    show (Marking m) = "|" ++ init (concatMap (\c -> show c ++ " ") m) ++ "|"
+    show m = "|" ++ init (concatMap (\c -> show c ++ " ") $ marks m) ++ "|"
 
   type Node     = Int
   type Transfer = ([Node], [Node]) -- Входные узыл и выходные узлы
@@ -46,18 +46,6 @@ module Tree where
   isCovering CoverMark = True
   isCovering _         = False
 
-  -- instance Eq MarkType where
-  --   (==) mt mo = fromMT mt == fromMT mo
-
-                    -- номер перехода, текущая маркировка, сабдеревья
-  -- data AttainTree = AttainTree {
-  --                     currentMark :: Marking
-  --                   , subTrees :: [(TransferNum, AttainTree)] } |
-  --                   Finish {
-  --                     markType :: MarkType
-  --                   , currentMark :: Marking
-  --                   , transfer :: TransferNum
-  --                     } deriving Show
   data Tree = Tree [(TransferNum, AttainTree)] |
               Degenerate
   instance Show Tree where
@@ -83,15 +71,6 @@ module Tree where
                               Tree _ -> "[" ++ show tre ++ "]"
                               _      -> ""
             in writeCurr ++ writeSubTrees ++ ")"
-  -- instance Show AttainTree where
-  --   show (Finish m _)           = show m
-  --   show (AttainTree m sbtrees) = let
-  --             label x = "Tree: " ++ show m ++ " " ++ x
-  --             showTree (trans, t) = " t" ++ case t of
-  --               Finish _ tr -> show tr    ++ " -> (" ++ show t ++ ")"
-  --               _           -> show trans ++ " -> (" ++ show t ++ ")"
-  --             decoration ts = "[" ++ ts ++ "]"
-  --           in label $ decoration $ concatMap showTree sbtrees
 
   replace :: [a] -> a -> Int -> [a]
   replace xs e n = take n xs ++ [e] ++ drop (n + 1) xs
@@ -130,9 +109,6 @@ module Tree where
                  else (JustMark, Marking omeged)
            else (JustMark, Marking nMark)
 
-  -- analys :: AttainTree -> String
-  -- analys = show
-
   type FoundedNodes = State [Marking]
 
   fillSubTree :: Petri -> Marking -> FoundedNodes AttainTree
@@ -143,12 +119,6 @@ module Tree where
       permitted  = map (second fromJust) permittedM
             -- уже были / ещё не были
       newAndOld st = span (flip notElem st . snd . snd) permitted
-            -- покрывающие / не покрывающие
-      -- covering    = filter (      isCovering . snd) permitted
-      -- notCovering = filter (not . isCovering . snd) permitted
-            -- для покрывающей маркировки удалить переход,
-            -- по которому она стала покрывающей
-            -- !!!!!!!!!!!! не сделано, и надо разобраться
       -- Фунция с общим состоянием для каждого поддерева
       findSubTreeList lst = runState (mapM (fillSubTree p) lst)
       in do
@@ -160,8 +130,6 @@ module Tree where
         -- Создадим конечные поддеревья для existedMarks
         let creaeteFinish (typ, m) = AttainTree m typ Degenerate
         let finishedPairs = map (second creaeteFinish) existedMarks
-        -- И конечные для покрывающих
-        -- let covTrees = [Finish m t | (t, m) <- covering]
         -- сохраним текущее состояние
         let savedMarks = map (snd . snd) newMarks
         let currExistMarks = savedMarks ++ foundMarks
