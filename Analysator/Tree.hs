@@ -1,6 +1,5 @@
 module Tree where
   import Control.Arrow --second
-  import Data.Tuple()
   import Control.Monad
   import Data.Maybe
   import Control.Monad.State.Lazy
@@ -12,15 +11,7 @@ module Tree where
 
   instance Show Chip where
     show (Num i) = show i
-    show Omega   = "w"--ω"
-    --
-    -- instance Monad Chip where
-    --   (Num i) >>= k = k (Num i)
-    --   Omega   >>= _ = Omega
-    --   _       >> k = k
-    --   Omega   >> _ = Omega
-    --   return  = Num
-    --   fail    = Omega
+    show Omega   = "ω"
 
   instance Eq Chip where
     (==) Omega   Omega   = True
@@ -32,7 +23,7 @@ module Tree where
     (<=) Omega   _       = False
     (<=) (Num c) (Num o) = c <= o
 
-  data Marking  = Marking {
+  data Marking = Marking {
                 marks :: [Chip]
               } deriving Eq
   instance Show Marking where
@@ -84,11 +75,13 @@ module Tree where
   replace :: [a] -> a -> Int -> [a]
   replace xs e n = take n xs ++ [e] ++ drop (n + 1) xs
 
+  -- return if chips are enough else fail
   nextMark :: Monad m => Marking -> Transfer -> m (MarkType, Marking)
-  nextMark mark (input, output) = liftM (newMark mark output) $
-                                  foldM ifEnough mark input where
-      ifEnough :: Monad m => Marking -> Node -> m Marking
-      ifEnough (Marking cmark) node = case cmark!!node of
+  nextMark mark (input, out) = liftM (newMark mark out) $
+                                     foldM ifEnough mark input
+      where
+    ifEnough :: Monad m => Marking -> Node -> m Marking
+    ifEnough (Marking cmark) node = case cmark!!node of
                     Omega   -> return $ Marking cmark
                     (Num i) -> if i <= 0 then
                                 fail "Not enough"
@@ -96,13 +89,13 @@ module Tree where
                                  new = replace cmark (Num (i - 1)) node
                                in return $ Marking new
 
-      newMark :: Marking -> [Node] -> Marking -> (MarkType, Marking)
-      newMark (Marking oldMark) n (Marking currMark) = let
+    newMark :: Marking -> [Node] -> Marking -> (MarkType, Marking)
+    newMark (Marking oldMark) n (Marking currMark) = let
           addChip cmark node = case cmark!!node of -- Добавить фишки
               Omega   -> cmark
               (Num i) -> replace cmark (Num (i + 1)) node
           nMark = foldl addChip currMark n
-          isCover (prev, cur) = prev <= cur -- Покрывает ли в текущей ноде
+          isCover prev cur = prev <= cur -- Покрывает ли в текущей ноде
           cover oldM cmark node = let -- Заомежить всё, куда добавлялось
                   old = oldM!!node
                   cur = cmark!!node
@@ -111,8 +104,8 @@ module Tree where
                      -- trace tr $
                      replace cmark Omega node
                    else cmark
-        in if all isCover (zip oldMark nMark) then let -- Если покрывает,
-              omeged = foldl (cover oldMark) nMark n   -- добавим ω
+        in if all (uncurry isCover) $ zip oldMark nMark then -- Если покрывает,
+              let omeged = foldl (cover oldMark) nMark n   -- добавим ω
               in if omeged > nMark then
                    (CoverMark, Marking omeged)
                  else (JustMark, Marking omeged)
@@ -130,6 +123,8 @@ module Tree where
       newAndOld st = span (flip notElem st . snd . snd) permitted
       -- Фунция с общим состоянием для каждого поддерева
       findSubTreeList lst = runState (mapM (fillSubTree p) lst)
+      -- функция создаёт вырожденные деревья
+      degenerate typ m = AttainTree m typ Degenerate
       in do
         foundMarks <- get
         -- Возьмём состояния, которых ещё не было и которые были
@@ -137,8 +132,7 @@ module Tree where
         -- Превращаем их в уже существующие
         let existedMarks = map (second (\(_, m) -> (AlreadyExist, m))) finishedMarks
         -- Создадим конечные поддеревья для existedMarks
-        let creaeteFinish (typ, m) = AttainTree m typ Degenerate
-        let finishedPairs = map (second creaeteFinish) existedMarks
+        let finishedPairs = map (second $ uncurry degenerate) existedMarks
         -- сохраним текущее состояние
         let savedMarks = map (snd . snd) newMarks
         let currExistMarks = savedMarks ++ foundMarks
