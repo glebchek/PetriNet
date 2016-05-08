@@ -6,12 +6,21 @@ module Tree where
   import Control.Monad.State.Lazy
 
   type TransferNum = Int
-  -- Look like maybe Monad
-  data Chip     = Num Int |
-                  Omega     -- Либо число либо Омега
+  -- Look's like maybe Monad
+  data Chip = Num Int |
+              Omega     -- Либо число либо Омега
+
   instance Show Chip where
     show (Num i) = show i
     show Omega   = "w"--ω"
+    --
+    -- instance Monad Chip where
+    --   (Num i) >>= k = k (Num i)
+    --   Omega   >>= _ = Omega
+    --   _       >> k = k
+    --   Omega   >> _ = Omega
+    --   return  = Num
+    --   fail    = Omega
 
   instance Eq Chip where
     (==) Omega   Omega   = True
@@ -56,19 +65,19 @@ module Tree where
   data AttainTree = AttainTree{
                       currentMark :: Marking
                     , markType    :: MarkType
-                    , tree        :: Tree
+                    , subTree     :: Tree
                   }
 
   instance Show AttainTree where
     show its = let
             typ = markType its
             mark = currentMark its
-            tre = tree its
+            tree = subTree its
             writeCurr = "(" ++ show mark ++ case typ of
                   JustMark -> " "
                   _        -> " is " ++ show typ
-            writeSubTrees = case tre of
-                              Tree _ -> "[" ++ show tre ++ "]"
+            writeSubTrees = case tree of
+                              Tree _ -> "[" ++ show tree ++ "]"
                               _      -> ""
             in writeCurr ++ writeSubTrees ++ ")"
 
