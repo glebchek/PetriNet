@@ -5,7 +5,7 @@ module Tree where
   import Control.Monad.State.Lazy
 
   type TransferNum = Int
-  -- Look's like maybe Monad
+
   data Chip = Num Int |
               Omega     -- Либо число либо Омега
 
