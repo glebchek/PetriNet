@@ -37,6 +37,28 @@ module Analys where
       (curTranses, subTrees) = unzip pairs
     in elem t curTranses && all (`isTransferAlife` t) subTrees
 
+  -- Переход устойчив, если из каждой маркировки,
+  -- В которую мы по нему пришли,
+  -- Его можно снова запустить
+  -- Не будет работать, если маркировка
+  -- помечена как уже существующая, и, при этом,
+  -- достигли мы её не с помощью этого перехода
+  -- (тогда переход может оказаться нестабильным)
+  -- !!!!!!!!!! неправильно
+  isTransferStable :: AttainTree -> TransferNum -> Bool
+  isTransferStable (AttainTree _ _ Degenerate) _        = True
+  isTransferStable (AttainTree _ _ (Tree pairs)) t      = let
+      branch = filter ((== t) . fst) pairs --Найдем наш переход
+      is = not $ null branch
+      isExist (AttainTree _ _ (Tree ps))  = elem t $ map fst ps
+      isExist (AttainTree _ _ Degenerate) = True
+      isStillStable (AttainTree _ _ tree) = case tree of
+                        Degenerate -> True
+                        (Tree ps)  -> all (isExist . snd) ps -- all of snd ps has t
+                        -- elem t $ map fst ps
+   in all ((`isTransferStable` t) . snd) pairs     &&
+      (not is || all (isStillStable . snd) branch)
+
 
   analys :: Petri -> AttainTree -> [String]
   analys petri tree = let
@@ -73,8 +95,18 @@ module Analys where
                   if all snd vitalityTransfers then
                        "сеть жива."
                   else "сеть не жива."
+    transferSTability = zip transfsNum
+                            (map (isTransferStable tree) transfsNum)
+    pTransStable = "Стабильность переходов: " ++
+               concatMap ((\n -> "t" ++ show n ++ " стабилен; ") . fst)
+                         (filter snd transferSTability)
+    pWebStable = "Стабильность сети: " ++
+                  if all snd transferSTability then
+                       "сеть стабильна."
+                  else "сеть не стабильна."
     in [kLimit,         safety,        selfLife,
-        potentVitality, vitalityTrans, webVitality]
+        potentVitality, vitalityTrans, webVitality,
+        pTransStable,   pWebStable]
 
   growAndGetInfo :: Petri -> [Int] -> String
   growAndGetInfo transfers mark = let
