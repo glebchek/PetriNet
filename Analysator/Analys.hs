@@ -95,13 +95,13 @@ module Analys where
                   if all snd vitalityTransfers then
                        "сеть жива."
                   else "сеть не жива."
-    transferSTability = zip transfsNum
+    transferStability = zip transfsNum
                             (map (isTransferStable tree) transfsNum)
     pTransStable = "Стабильность переходов: " ++
                concatMap ((\n -> "t" ++ show n ++ " стабилен; ") . fst)
-                         (filter snd transferSTability)
+                         (filter snd transferStability)
     pWebStable = "Стабильность сети: " ++
-                  if all snd transferSTability then
+                  if all snd transferStability then
                        "сеть стабильна."
                   else "сеть не стабильна."
     in [kLimit,         safety,        selfLife,

@@ -120,7 +120,8 @@ module Tree where
       permittedM = filter (isJust . snd) pairs -- Разрешённые
       permitted  = map (second fromJust) permittedM
             -- уже были / ещё не были
-      newAndOld st = span (flip notElem st . snd . snd) permitted
+      new st = filter (flip notElem st . snd . snd) permitted
+      old st = filter (flip elem    st . snd . snd) permitted
       -- Фунция с общим состоянием для каждого поддерева
       findSubTreeList lst = runState (mapM (fillSubTree p) lst)
       -- функция создаёт вырожденные деревья
@@ -128,7 +129,8 @@ module Tree where
       in do
         foundMarks <- get
         -- Возьмём состояния, которых ещё не было и которые были
-        let (newMarks, finishedMarks) = newAndOld foundMarks
+        let newMarks = new foundMarks
+        let finishedMarks = old foundMarks
         -- Превращаем их в уже существующие
         let existedMarks = map (second (\(_, m) -> (AlreadyExist, m))) finishedMarks
         -- Создадим конечные поддеревья для existedMarks
