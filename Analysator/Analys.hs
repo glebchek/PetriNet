@@ -97,10 +97,10 @@ module Analys where
                   else "сеть не жива."
     transferStability = zip transfsNum
                             (map (isTransferStable tree) transfsNum)
-    pTransStable = "Стабильность переходов: " ++
+    pTransStable = "Стабильность (устойчивость) переходов: " ++
                concatMap ((\n -> "t" ++ show n ++ " стабилен; ") . fst)
                          (filter snd transferStability)
-    pWebStable = "Стабильность сети: " ++
+    pWebStable = "Стабильность (устойчивость) сети: " ++
                   if all snd transferStability then
                        "сеть стабильна."
                   else "сеть не стабильна."
