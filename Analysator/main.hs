@@ -1,7 +1,6 @@
 module Main where
   import Analys
   import System.Environment
-  import Debug.Trace
 
   parse :: String -> ([Int], [([Int], [Int])])
   parse = subParse . lines where
@@ -22,9 +21,9 @@ module Main where
   main = do
     text <- do
         args <- getArgs
-        case trace (show args) args of
+        case args of
           "--from-args" : content -> return $ unlines content
-          _                         -> getContents
+          _                       -> getContents
     let (mark, transfers) = parse text
     putStrLn $ growAndGetInfo transfers mark
     -- let mark = [1, 2]
