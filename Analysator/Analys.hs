@@ -5,7 +5,9 @@ module Analys where
   kLimited (AttainTree (Marking mark) _ subTr) = let
           curMax   = maximum mark
           subTrMax = case subTr of
-                      Tree pairs -> maximum $ map (kLimited . snd) pairs
+                      Tree pairs -> if null pairs
+                                      then Num 0 else
+                                        maximum $ map (kLimited . snd) pairs
                       Degenerate -> Num 0
        in max curMax subTrMax
 
