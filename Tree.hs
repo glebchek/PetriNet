@@ -11,7 +11,7 @@ module Tree where
 
   instance Show Chip where
     show (Num i) = show i
-    show Omega   = "ω"
+    show Omega   = "\"omega\""
 
   instance Eq Chip where
     (==) Omega   Omega   = True
@@ -27,7 +27,7 @@ module Tree where
                 marks :: [Chip]
               } deriving Eq
   instance Show Marking where
-    show m = "|" ++ init (concatMap (\c -> show c ++ " ") $ marks m) ++ "|"
+    show m = "[" ++ init (concatMap (\c -> show c ++ ",") $ marks m) ++ "]"
 
   type Node     = Int
   type Transfer = ([Node], [Node]) -- Входные узыл и выходные узлы
@@ -39,8 +39,8 @@ module Tree where
 
   instance Show MarkType where
     show JustMark     = ""
-    show AlreadyExist = "Existed"
-    show CoverMark    = "Cover Mark"
+    show AlreadyExist = ", \"exist\": true"
+    show CoverMark    = ", \"cover\": true"
 
   isCovering :: MarkType -> Bool
   isCovering CoverMark = True
@@ -51,8 +51,8 @@ module Tree where
   instance Show Tree where
     show Degenerate = ""
     show (Tree pairs) = let
-      showOne (trans, tre) = " t" ++ show trans ++ " -> " ++ show tre
-      in concatMap showOne pairs
+      showOne (trans, tre) = " \"t" ++ show trans ++ "\" : {" ++ show tre ++ "}"
+      in init(concatMap (\x -> showOne x ++ ",") $ pairs)
   data AttainTree = AttainTree{
                       currentMark :: Marking
                     , markType    :: MarkType
@@ -64,13 +64,13 @@ module Tree where
             typ = markType its
             mark = currentMark its
             tree = subTree its
-            writeCurr = "(" ++ show mark ++ case typ of
-                  JustMark -> " "
-                  _        -> " is " ++ show typ
+            writeCurr = "\"node\": " ++ show mark ++ case typ of
+                  JustMark -> ""
+                  _        -> show typ
             writeSubTrees = case tree of
-                              Tree _ -> "[" ++ show tree ++ "]"
+                              Tree _ -> ", \"transfers\": {" ++ show tree ++ "}"
                               _      -> ""
-            in writeCurr ++ writeSubTrees ++ ")"
+            in writeCurr ++ writeSubTrees
 
   replace :: [a] -> a -> Int -> [a]
   replace xs e n = take n xs ++ [e] ++ drop (n + 1) xs
