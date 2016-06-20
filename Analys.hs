@@ -64,48 +64,44 @@ module Analys where
 
   analys :: Petri -> AttainTree -> [String]
   analys petri tree = let
-    kLimit = "Ограниченность: " ++
+    kLimit = "\"limited\": " ++
              case kLimited tree of
-                  Omega -> "сеть не ограничена."
+                  Omega -> "false,"
                   Num i -> "К = " ++ show i
-    safety = "Безопасность: " ++
+    safety = "\"safe\": " ++
              case kLimited tree of
-                  Num 1 -> "сеть безопасна."
-                  _     -> "сеть не безопасна."
-    selfLife = "Сохраняемость: " ++
+                  Num 1 -> "true,"
+                  _     -> "false,"
+    selfLife = "\"save\": " ++
                if isSelfLife tree
-                 then "сеть сохраняема."
-              else "сеть не сохраняема."
+                 then "true,"
+              else "false,"
     transfsNum = [1..length petri]
     potVitalityTransfers = zip transfsNum
                                (map (isTransferPotentiallyAlife tree) transfsNum)
-    potentVitality = "Потенциальная живость переходов: " ++ init (init
+    potentVitality = "\"transfers_potential_aliveness\": [" ++ init
                      (concatMap (\(n, is)
-                             -> "t"    ++
-                                show n ++
-                                " "    ++
-                                if is then "потенциально жив; "
-                                  else " мёртв; ")
-                          potVitalityTransfers))
-                                            ++ "."
+                             ->  if is then "\"t" ++ show n ++ "\"" ++ "," else show "")
+                            potVitalityTransfers)
+                                            ++ "],"
     vitalityTransfers = zip transfsNum
                             (map (isTransferAlife tree) transfsNum)
-    vitalityTrans = "Живость переходов: " ++
-               concatMap ((\n -> "t" ++ show n ++ " жив; ") . fst)
-                         (filter snd vitalityTransfers)
-    webVitality = "Живость сети: " ++
+    vitalityTrans = "\"transfers_aliveness\": [" ++
+               init(concatMap ((\n -> "\"t" ++ show n ++ "\",") . fst)
+                         (filter snd vitalityTransfers)) ++ "],"
+    webVitality = "\"net_aliveness\": " ++
                   if all snd vitalityTransfers then
-                       "сеть жива."
-                  else "сеть не жива."
+                       "true,"
+                  else "false,"
     transferStability = zip transfsNum
                             (map (isTransferStable tree) transfsNum)
-    pTransStable = "Стабильность (устойчивость) переходов: " ++
-               concatMap ((\n -> "t" ++ show n ++ " стабилен; ") . fst)
-                         (filter snd transferStability)
-    pWebStable = "Стабильность (устойчивость) сети: " ++
+    pTransStable = "\"transfers_stability\": [" ++
+               init (concatMap ((\n -> "\"t" ++ show n ++ "\",") . fst)
+                         (filter snd transferStability)) ++ "],"
+    pWebStable = "\"net_stability\": " ++
                   if all snd transferStability then
-                       "сеть стабильна."
-                  else "сеть не стабильна."
+                       "true"
+                  else "false"
     in [kLimit,         safety,        selfLife,
         potentVitality, vitalityTrans, webVitality,
         pTransStable,   pWebStable]
@@ -115,5 +111,5 @@ module Analys where
           petriMark = Marking [Num i | i <- mark]
           tree = findTree transfers petriMark
           settings = analys transfers tree
-        in "Attain tree:\n" ++ show tree ++
-           "\nSettings:\n"  ++ init (unlines settings)
+        in "{\"tree\": {" ++ show tree ++ "}" ++
+           ","  ++ concat settings ++ "}"
