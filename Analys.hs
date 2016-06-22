@@ -68,7 +68,7 @@ module Analys where
     kLimit = "\"limited\": " ++
              case kLimited tree of
                   Omega -> "false,"
-                  Num i -> "К = " ++ show i
+                  Num i -> show i ++ ","
     safety = "\"safe\": " ++
              case kLimited tree of
                   Num 1 -> "true,"
