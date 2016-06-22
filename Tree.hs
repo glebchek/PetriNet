@@ -2,6 +2,7 @@ module Tree where
   import Control.Arrow --second
   import Control.Monad
   import Data.Maybe
+  import Data.List
   import Control.Monad.State.Lazy
 
   type TransferNum = Int
@@ -27,7 +28,7 @@ module Tree where
                 marks :: [Chip]
               } deriving Eq
   instance Show Marking where
-    show m = "[" ++ init (concatMap (\c -> show c ++ ",") $ marks m) ++ "]"
+    show m = "[" ++ intercalate ", " (map show $ marks m) ++ "]"
 
   type Node     = Int
   type Transfer = ([Node], [Node]) -- Входные узыл и выходные узлы
@@ -52,7 +53,7 @@ module Tree where
     show Degenerate = ""
     show (Tree pairs) = let
       showOne (trans, tre) = " \"t" ++ show trans ++ "\" : {" ++ show tre ++ "}"
-      in init(concatMap (\x -> showOne x ++ ",") $ pairs)
+      in intercalate ", " $ map showOne pairs
   data AttainTree = AttainTree{
                       currentMark :: Marking
                     , markType    :: MarkType

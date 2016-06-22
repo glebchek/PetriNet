@@ -1,5 +1,6 @@
 module Analys where
   import Tree
+  import Data.List
 
   kLimited :: AttainTree -> Chip
   kLimited (AttainTree (Marking mark) _ subTr) = let
@@ -87,7 +88,7 @@ module Analys where
     vitalityTransfers = zip transfsNum
                             (map (isTransferAlife tree) transfsNum)
     vitalityTrans = "\"transfers_aliveness\": [" ++
-               init(concatMap ((\n -> "\"t" ++ show n ++ "\",") . fst)
+               intercalate ", " (map ((\n -> "\"t" ++ show n) . fst)
                          (filter snd vitalityTransfers)) ++ "],"
     webVitality = "\"net_aliveness\": " ++
                   if all snd vitalityTransfers then
@@ -96,7 +97,7 @@ module Analys where
     transferStability = zip transfsNum
                             (map (isTransferStable tree) transfsNum)
     pTransStable = "\"transfers_stability\": [" ++
-               init (concatMap ((\n -> "\"t" ++ show n ++ "\",") . fst)
+               intercalate ", " (map ((\n -> "\"t" ++ show n) . fst)
                          (filter snd transferStability)) ++ "],"
     pWebStable = "\"net_stability\": " ++
                   if all snd transferStability then
@@ -112,4 +113,4 @@ module Analys where
           tree = findTree transfers petriMark
           settings = analys transfers tree
         in "{\"tree\": {" ++ show tree ++ "}" ++
-           ","  ++ concat settings ++ "}"
+           ", "  ++ concat settings ++ "}"
